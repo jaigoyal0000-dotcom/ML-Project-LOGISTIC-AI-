@@ -1,0 +1,73 @@
+{
+  "total_network_segments": 26214,
+  "total_network_breaches": 23388,
+  "top3_hubs": [
+    "Gurgaon Bilaspur (Haryana)",
+    "Bangalore Nelamangala (Karnataka)",
+    "Bhiwandi Mankoli (Maharashtra)"
+  ],
+  "top3_breach_count": 4100,
+  "top3_breach_share_pct": 17.53,
+  "top3_volume_share_pct": 17.6,
+  "projected_breaches_prevented": 1640,
+  "projected_pct_reduction_late_deliveries": 7.01,
+  "sample_revenue_recovered_inr": 623200.0,
+  "projected_annual_revenue_recovered_inr": 32406400.0,
+  "top5_hubs": [
+    {
+      "hub_id": "IND000000ACB",
+      "name": "Gurgaon_Bilaspur_HB (Haryana)",
+      "state": "Haryana",
+      "betweenness": 0.2144,
+      "chokepoint_score": 97.7,
+      "total_volume": 1469,
+      "total_breaches": 1225,
+      "breach_rate": 83.4,
+      "chronic_corridors": "46 / 48"
+    },
+    {
+      "hub_id": "IND562132AAA",
+      "name": "Bangalore_Nelmngla_H (Karnataka)",
+      "state": "Karnataka",
+      "betweenness": 0.1139,
+      "chokepoint_score": 69.2,
+      "total_volume": 1086,
+      "total_breaches": 962,
+      "breach_rate": 88.6,
+      "chronic_corridors": "34 / 35"
+    },
+    {
+      "hub_id": "IND421302AAG",
+      "name": "Bhiwandi_Mankoli_HB (Maharashtra)",
+      "state": "Maharashtra",
+      "betweenness": 0.0469,
+      "chokepoint_score": 59.4,
+      "total_volume": 967,
+      "total_breaches": 965,
+      "breach_rate": 99.8,
+      "chronic_corridors": "27 / 27"
+    },
+    {
+      "hub_id": "IND501359AAE",
+      "name": "Hyderabad_Shamshbd_H (Telangana)",
+      "state": "Telangana",
+      "betweenness": 0.0826,
+      "chokepoint_score": 46.8,
+      "total_volume": 556,
+      "total_breaches": 530,
+      "breach_rate": 95.3,
+      "chronic_corridors": "27 / 27"
+    },
+    {
+      "hub_id": "IND712311AAA",
+      "name": "Kolkata_Dankuni_HB (West Bengal)",
+      "state": "West Bengal",
+      "betweenness": 0.0946,
+      "chokepoint_score": 44.5,
+      "total_volume": 371,
+      "total_breaches": 367,
+      "breach_rate": 98.9,
+      "chronic_corridors": "20 / 21"
+    }
+  ]
+}

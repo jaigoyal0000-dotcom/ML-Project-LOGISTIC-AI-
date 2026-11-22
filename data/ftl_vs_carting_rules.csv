@@ -1,0 +1,10 @@
+Distance Band,Source Hub Risk,FTL Median Time (hr),Carting Median Time (hr),Time Delta (Carting - FTL),FTL SLA Breach %,Carting SLA Breach %,FTL Total Cost (INR),Carting Total Cost (INR),Recommended Mode,Operational Rationale
+Long (>300km),Low Hub Risk,7.98,4.38,-3.6,68.3,17.6,12959.0,2708.0,FTL (Dedicated),High structural network risk or long corridor: FTL eliminates intermediate sorting congestion and protects SLA.
+Long (>300km),Moderate Hub Risk,10.47,8.31,-2.16,100.0,50.0,15988.0,3538.0,FTL (Dedicated),High structural network risk or long corridor: FTL eliminates intermediate sorting congestion and protects SLA.
+Long (>300km),High Chokepoint Hub,16.63,3.47,-13.17,96.4,9.1,28425.0,1863.0,FTL (Dedicated),High structural network risk or long corridor: FTL eliminates intermediate sorting congestion and protects SLA.
+Medium (100-300km),Low Hub Risk,3.29,2.77,-0.52,75.4,72.4,4998.0,2834.0,Carting (Consolidated),Significant economic advantage (INR 2165 savings) with comparable SLA reliability.
+Medium (100-300km),Moderate Hub Risk,4.71,3.83,-0.88,98.4,94.1,5563.0,3422.0,Carting (Consolidated),Significant economic advantage (INR 2141 savings) with comparable SLA reliability.
+Medium (100-300km),High Chokepoint Hub,4.22,3.18,-1.03,93.6,64.4,6276.0,2871.0,FTL (Dedicated),High structural network risk or long corridor: FTL eliminates intermediate sorting congestion and protects SLA.
+Short (<100km),Low Hub Risk,1.03,0.82,-0.22,79.0,75.5,2422.0,1876.0,Carting (Consolidated),Significant economic advantage (INR 545 savings) with comparable SLA reliability.
+Short (<100km),Moderate Hub Risk,1.38,1.03,-0.35,98.7,97.2,2656.0,2050.0,Carting (Consolidated),Significant economic advantage (INR 606 savings) with comparable SLA reliability.
+Short (<100km),High Chokepoint Hub,1.42,1.05,-0.37,97.2,91.1,2833.0,2005.0,FTL (Dedicated),High structural network risk or long corridor: FTL eliminates intermediate sorting congestion and protects SLA.

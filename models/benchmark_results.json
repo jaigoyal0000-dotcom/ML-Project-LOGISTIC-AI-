@@ -1,0 +1,62 @@
+[
+  {
+    "Model": "OSRM Routing Engine (Reference)",
+    "MAE (Hours)": 1.489,
+    "MAE (Minutes)": 89.3,
+    "Within-15% Accuracy (%)": 7.06,
+    "Within-25% Accuracy (%)": 13.8,
+    "RMSE (Hours)": 3.366,
+    "R\u00b2 Score": 0.726,
+    "Training Time (s)": 0.0
+  },
+  {
+    "Model": "Baseline: Linear Regression",
+    "MAE (Hours)": 0.766,
+    "MAE (Minutes)": 46.0,
+    "Within-15% Accuracy (%)": 27.9,
+    "Within-25% Accuracy (%)": 42.92,
+    "RMSE (Hours)": 1.633,
+    "R\u00b2 Score": 0.935,
+    "Training Time (s)": 0.04
+  },
+  {
+    "Model": "Baseline: Gradient Boosting (Trip-Level Only)",
+    "MAE (Hours)": 0.711,
+    "MAE (Minutes)": 42.7,
+    "Within-15% Accuracy (%)": 30.27,
+    "Within-25% Accuracy (%)": 46.98,
+    "RMSE (Hours)": 1.526,
+    "R\u00b2 Score": 0.944,
+    "Training Time (s)": 6.51
+  },
+  {
+    "Model": "Graph-Enhanced: Random Forest Regressor",
+    "MAE (Hours)": 0.503,
+    "MAE (Minutes)": 30.2,
+    "Within-15% Accuracy (%)": 48.14,
+    "Within-25% Accuracy (%)": 66.92,
+    "RMSE (Hours)": 1.232,
+    "R\u00b2 Score": 0.963,
+    "Training Time (s)": 12.02
+  },
+  {
+    "Model": "Graph-Enhanced: Gradient Boosting (+ Network Intelligence)",
+    "MAE (Hours)": 0.511,
+    "MAE (Minutes)": 30.7,
+    "Within-15% Accuracy (%)": 48.67,
+    "Within-25% Accuracy (%)": 67.45,
+    "RMSE (Hours)": 1.266,
+    "R\u00b2 Score": 0.961,
+    "Training Time (s)": 93.31
+  },
+  {
+    "Model": "Graph-Enhanced: Deep GraphSAGE GNN (PyTorch Geometric)",
+    "MAE (Hours)": 0.6,
+    "MAE (Minutes)": 36.0,
+    "Within-15% Accuracy (%)": 43.74,
+    "Within-25% Accuracy (%)": 63.45,
+    "RMSE (Hours)": 1.536,
+    "R\u00b2 Score": 0.944,
+    "Training Time (s)": 17.47
+  }
+]
