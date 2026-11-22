@@ -260,6 +260,14 @@ def download_presentation():
     return jsonify({"error": "Presentation PPTX not found"}), 404
 
 
+@app.route("/download/frontend-presentation", methods=["GET"])
+def download_frontend_presentation():
+    pptx_path = os.path.abspath("frontend_presentation_slides.pptx")
+    if os.path.exists(pptx_path):
+        return send_file(pptx_path, as_attachment=True, download_name="Delhivery_Frontend_Watchtower_Presentation.pptx", mimetype='application/vnd.openxmlformats-officedocument.presentationml.presentation')
+    return jsonify({"error": "Frontend Presentation PPTX not found"}), 404
+
+
 @app.route("/view/report", methods=["GET"])
 def view_pdf_report():
     pdf_path = os.path.abspath("reports/Delhivery_Logistics_Optimization_Full_Project_Report.pdf")
