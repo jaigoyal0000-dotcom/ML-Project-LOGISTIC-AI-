@@ -1,114 +1,110 @@
 """
-src/geo_mapper.py
------------------
-Assigns realistic Indian geographic coordinates (latitude, longitude) to Delhivery
-logistics facilities based on city names, state names, and PIN center codes.
-Produces geospatial layers for interactive map visualizations and routing.
+src/stage_03_geo_mapper.py
+--------------------------
+Assigns real-world Indian geographic coordinates (latitude, longitude) to Delhivery
+logistics facilities using the official GeoNames Indian Postal Code database (pgeocode)
+by extracting the 6-digit PIN code from each facility hub_id (e.g., IND562132AAA -> 562132).
+Falls back to 3-digit postal prefix matching and major hub references only when a hub
+uses an internal non-postal code (e.g., IND000000ACB -> Gurgaon Bilaspur).
 """
 
 import os
 import re
 import numpy as np
 import pandas as pd
+import pgeocode
 
-# High-precision reference coordinates for major Indian logistics centers and states
-CITY_COORDINATES = {
+# Reference coordinates for internal non-PIN master hubs (e.g. IND000000*)
+INTERNAL_CITY_COORDS = {
     "gurgaon": (28.4595, 77.0266),
     "bilaspur": (28.3245, 76.8483),
     "delhi": (28.6139, 77.2090),
-    "sonipat": (28.9931, 77.0151),
-    "chandigarh": (30.7333, 76.7794),
-    "ludhiana": (30.9010, 75.8573),
-    "jaipur": (26.9124, 75.7873),
-    "lucknow": (26.8467, 80.9462),
-    "kanpur": (26.4499, 80.3319),
-    "patna": (25.5941, 85.1376),
-    "muzaffarpur": (26.1209, 85.3647),
-    "kolkata": (22.5726, 88.3639),
-    "dankuni": (22.6841, 88.2917),
-    "guwahati": (26.1445, 91.7362),
-    "ahmedabad": (23.0225, 72.5714),
-    "surat": (21.1702, 72.8311),
-    "vadodara": (22.3072, 73.1812),
-    "mumbai": (19.0760, 72.8777),
     "bhiwandi": (19.2967, 73.0631),
-    "pune": (18.5204, 73.8567),
-    "nagpur": (21.1458, 79.0882),
-    "indore": (22.7196, 75.8577),
-    "bhopal": (23.2599, 77.4126),
-    "hyderabad": (17.3850, 78.4867),
-    "shamshabad": (17.2662, 78.3970),
+    "mumbai": (19.0760, 72.8777),
     "bangalore": (12.9716, 77.5946),
     "bengaluru": (12.9716, 77.5946),
     "nelamangala": (13.0984, 77.3917),
-    "bommasandra": (12.8167, 77.6833),
+    "hyderabad": (17.3850, 78.4867),
+    "shamshabad": (17.2662, 78.3970),
+    "kolkata": (22.5726, 88.3639),
+    "dankuni": (22.6841, 88.2917),
     "chennai": (13.0827, 80.2707),
-    "poonamallee": (13.0489, 80.0967),
-    "coimbatore": (11.0168, 76.9558),
-    "kochi": (9.9312, 76.2673),
-    "ernakulam": (9.9816, 76.2999)
-}
-
-STATE_CENTROIDS = {
-    "haryana": (29.0588, 76.0856),
-    "delhi": (28.7041, 77.1025),
-    "punjab": (31.1471, 75.3412),
-    "rajasthan": (27.0238, 74.2179),
-    "uttar pradesh": (26.8467, 80.9462),
-    "bihar": (25.0961, 85.3131),
-    "west bengal": (22.9868, 87.8550),
-    "assam": (26.2006, 92.9376),
-    "gujarat": (22.2587, 71.1924),
-    "maharashtra": (19.7515, 75.7139),
-    "madhya pradesh": (22.9734, 78.6569),
-    "telangana": (18.1124, 79.0193),
-    "andhra pradesh": (15.9129, 79.7400),
-    "karnataka": (15.3173, 75.7139),
-    "tamil nadu": (11.1271, 78.6569),
-    "kerala": (10.8505, 76.2711),
-    "odisha": (20.9517, 85.0985)
+    "ahmedabad": (23.0225, 72.5714),
+    "pune": (18.5204, 73.8567),
 }
 
 
-def geocode_hub(hub_id, hub_name, hub_state):
-    """Derives latitude and longitude for a logistics center."""
-    name_str = str(hub_name).lower()
-    state_str = str(hub_state).lower()
-
-    # 1. Check specific city keywords
-    for city, (lat, lon) in CITY_COORDINATES.items():
-        if city in name_str:
-            # Add small deterministic jitter based on hub_id hash so hubs in same city don't completely overlap
-            seed = sum(ord(c) for c in hub_id) % 100
-            jitter_lat = ((seed % 10) - 5) * 0.012
-            jitter_lon = (((seed // 10) % 10) - 5) * 0.012
-            return lat + jitter_lat, lon + jitter_lon
-
-    # 2. Check state centroid
-    for state, (lat, lon) in STATE_CENTROIDS.items():
-        if state in state_str or state in name_str:
-            seed = sum(ord(c) for c in hub_id) % 1000
-            jitter_lat = ((seed % 20) - 10) * 0.04
-            jitter_lon = (((seed // 20) % 20) - 10) * 0.04
-            return lat + jitter_lat, lon + jitter_lon
-
-    # 3. Fallback to geographic center of India
-    seed = sum(ord(c) for c in hub_id) % 1000
-    return 21.0 + ((seed % 20) - 10) * 0.1, 78.0 + (((seed // 20) % 20) - 10) * 0.1
-
-
-def enrich_hubs_with_geocoordinates(hubs_csv="data/hub_centrality_metrics.csv", output_csv="data/hubs_geocoded.csv"):
-    """Reads hub centrality metrics and writes an enriched dataset with lat and lon."""
-    print("Geocoding logistics facilities across India...")
+def enrich_hubs_with_geocoordinates(
+    hubs_csv="data/hub_centrality_metrics.csv",
+    output_csv="data/hubs_geocoded.csv"
+):
+    """Reads hub centrality metrics and enriches each facility with real GeoNames lat/lon."""
+    print("Geocoding logistics facilities using real GeoNames India Postal Database (pgeocode)...")
     df = pd.read_csv(hubs_csv)
+    nomi = pgeocode.Nominatim("in")
 
-    coords = [geocode_hub(r['hub_id'], r['hub_name'], r['hub_state']) for _, r in df.iterrows()]
-    df['latitude'] = [c[0] for c in coords]
-    df['longitude'] = [c[1] for c in coords]
+    # Extract 6-digit PIN from hub_id (e.g., IND562132AAA -> 562132)
+    pins = df["hub_id"].astype(str).str.extract(r"IND(\d{6})")[0]
+    unique_pins = [p for p in pins.dropna().unique() if p != "000000"]
+
+    geo_df = nomi.query_postal_code(unique_pins)
+    pin_to_coords = {}
+    for pin, lat, lon in zip(unique_pins, geo_df["latitude"], geo_df["longitude"]):
+        if pd.notna(lat) and pd.notna(lon):
+            pin_to_coords[pin] = (float(lat), float(lon))
+
+    # Build 3-digit postal prefix fallback from real GeoNames data
+    prefix_df = nomi._data[["postal_code", "latitude", "longitude"]].dropna().copy()
+    prefix_df["prefix3"] = prefix_df["postal_code"].astype(str).str[:3]
+    prefix_means = prefix_df.groupby("prefix3")[["latitude", "longitude"]].mean().to_dict("index")
+
+    lats, lons, sources = [], [], []
+    for idx, row in df.iterrows():
+        hub_id = str(row["hub_id"])
+        name_str = str(row["hub_name"]).lower()
+        pin = pins.iloc[idx]
+
+        # 1. Exact 6-digit GeoNames PIN lookup
+        if pd.notna(pin) and pin in pin_to_coords:
+            lat, lon = pin_to_coords[pin]
+            lats.append(lat)
+            lons.append(lon)
+            sources.append("GeoNames_PIN")
+            continue
+
+        # 2. Internal master hub city lookup (e.g. IND000000ACB Gurgaon Bilaspur)
+        matched_city = False
+        for city, (lat, lon) in INTERNAL_CITY_COORDS.items():
+            if city in name_str:
+                lats.append(lat)
+                lons.append(lon)
+                sources.append("City_Reference")
+                matched_city = True
+                break
+        if matched_city:
+            continue
+
+        # 3. Real GeoNames 3-digit postal region centroid fallback
+        if pd.notna(pin) and pin != "000000" and pin[:3] in prefix_means:
+            m = prefix_means[pin[:3]]
+            lats.append(float(m["latitude"]))
+            lons.append(float(m["longitude"]))
+            sources.append("GeoNames_Prefix3")
+            continue
+
+        # 4. Geographic center of India fallback
+        lats.append(21.1458)
+        lons.append(79.0882)
+        sources.append("India_Center")
+
+    df["latitude"] = lats
+    df["longitude"] = lons
+    df["geo_source"] = sources
 
     os.makedirs(os.path.dirname(output_csv), exist_ok=True)
     df.to_csv(output_csv, index=False)
-    print(f"Saved geocoded hubs ({len(df):,} locations) to {output_csv}")
+    print(f"Saved real geocoded hubs ({len(df):,} locations) to {output_csv}")
+    print("Geocoding Source Breakdown:", df["geo_source"].value_counts().to_dict())
     return df
 
 
