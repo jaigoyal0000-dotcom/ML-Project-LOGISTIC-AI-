@@ -31,7 +31,7 @@ def test_artifacts_exist():
         "models/benchmark_results.json",
         "models/feature_importance.csv",
         "reports/operations_strategy_memo.md",
-        "reports/Delhivery_Network_Optimization_Report.pdf",
+        "reports/Delhivery_Logistics_Optimization_Full_Project_Report.pdf",
         "reports/strategy_impact_metrics.json",
         "reports/figures/fig1_osrm_delay_distribution.png",
         "reports/figures/fig2_top_chokepoints_sla_breaches.png",
@@ -86,7 +86,7 @@ def test_model_inference():
 
 
 def test_decision_framework():
-    from src.decision_framework import RouteTypeDecisionEngine
+    from src.stage_07_decision_framework import RouteTypeDecisionEngine
     engine = RouteTypeDecisionEngine()
     engine.load_and_merge()
 
@@ -99,7 +99,7 @@ def test_decision_framework():
 
 
 def test_route_optimizer():
-    from src.route_optimizer import DynamicRouteOptimizer
+    from src.stage_09_route_optimizer import DynamicRouteOptimizer
     opt = DynamicRouteOptimizer()
     opt.load_network()
     res = opt.find_routes("IND000000ACB", "IND562132AAA")

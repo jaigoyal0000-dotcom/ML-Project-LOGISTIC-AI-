@@ -849,7 +849,7 @@ elif menu_option == "DYNAMIC ROUTE OPTIMIZER":
     st.markdown("### 🔀 DYNAMIC CHOKEPOINT-BYPASS ROUTING ENGINE")
     st.caption("SHORTEST DISTANCE VS. CONGESTION-AWARE DYNAMIC IMPEDANCE ROUTING")
 
-    from src.route_optimizer import DynamicRouteOptimizer
+    from src.stage_09_route_optimizer import DynamicRouteOptimizer
     optimizer = DynamicRouteOptimizer()
     optimizer.load_network()
 
