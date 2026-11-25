@@ -34,41 +34,41 @@ ml_proj/
 │   ├── ftl_vs_carting_rules.csv      # Empirical FTL vs Carting trade-off matrix
 │   └── logistics_graph.pkl           # Serialized NetworkX directed weighted graph
 ├── src/
-│   ├── data_prep.py                  # Step 1: Cleaning, aggregation, and leakage prevention
-│   ├── graph_builder.py              # Step 2: Directed weighted graph & bottleneck audit
-│   ├── geo_mapper.py                 # Step 2b: Indian geocoding for spatial map layers
-│   ├── node_embeddings.py            # Step 3: Node2Vec & GraphSAGE feature generation
-│   ├── models.py                     # Step 4: Baseline vs Graph-Enhanced ML benchmarking
-│   ├── gnn_graphsage.py              # Step 4b: Deep GraphSAGE GNN on PyTorch Geometric
-│   ├── decision_framework.py         # Step 5: FTL vs Carting time-cost-SLA engine
-│   ├── strategy_memo.py              # Step 6: Operations leadership strategy memo & ROI
-│   ├── visualize.py                  # Step 7: Publication-quality charts generator
-│   ├── pdf_generator.py              # Step 8: Executive PDF Consulting Report builder
-│   ├── route_optimizer.py            # Dynamic chokepoint-bypass routing engine
-│   └── run_pipeline.py               # Master end-to-end execution runner
+│   ├── stage_01_data_prep.py           # Stage 1: Cleaning, aggregation, and leakage prevention
+│   ├── stage_02_graph_builder.py       # Stage 2: Directed weighted graph & bottleneck audit
+│   ├── stage_03_geo_mapper.py          # Stage 3: Indian geocoding for spatial map layers
+│   ├── stage_04_node_embeddings.py     # Stage 4: Node2Vec & GraphSAGE feature generation
+│   ├── stage_05_models.py              # Stage 5: Baseline vs Graph-Enhanced ML benchmarking
+│   ├── stage_06_gnn_graphsage.py       # Stage 6: Deep GraphSAGE GNN on PyTorch Geometric
+│   ├── stage_07_decision_framework.py  # Stage 7: FTL vs Carting time-cost-SLA engine
+│   ├── stage_08_strategy_memo.py       # Stage 8: Operations leadership strategy memo & ROI
+│   ├── stage_09_route_optimizer.py     # Stage 9: Dynamic chokepoint-bypass routing engine
+│   ├── stage_10_visualize.py           # Stage 10: Publication-quality charts generator
+│   ├── stage_11_report_pdf.py          # Stage 11: Master Executive PDF Report builder
+│   └── stage_12_run_pipeline.py        # Stage 12: Master end-to-end execution runner
 ├── api/
-│   └── main.py                       # Production REST API (Flask & Werkzeug)
+│   └── main.py                         # Production REST API (Flask & Werkzeug)
 ├── app/
-│   └── app.py                        # Advanced Streamlit Interactive Web Application (8 views)
+│   └── app.py                          # Watchtower Operations HUD Streamlit App
 ├── models/
-│   ├── best_graph_model.joblib       # Production Graph-Enhanced Gradient Boosting model
-│   ├── baseline_model.joblib         # Baseline trip-level regression model
-│   ├── graphsage_gnn.pt              # Trained PyTorch Geometric GraphSAGE checkpoint
-│   ├── benchmark_results.json        # Comparative benchmark evaluation metrics
-│   ├── feature_importance.csv        # Top predictive features ranking
-│   └── pipeline_meta.json            # Graph advantage summary metadata
+│   ├── best_graph_model.joblib         # Production Graph-Enhanced Gradient Boosting model
+│   ├── baseline_model.joblib           # Baseline trip-level regression model
+│   ├── graphsage_gnn.pt                # Trained PyTorch Geometric GraphSAGE checkpoint
+│   ├── benchmark_results.json          # Comparative benchmark evaluation metrics
+│   ├── feature_importance.csv          # Top predictive features ranking
+│   └── pipeline_meta.json              # Graph advantage summary metadata
 ├── reports/
-│   ├── operations_strategy_memo.md   # Executive Strategy Memo for VP of Logistics
-│   ├── Delhivery_Network_Optimization_Report.pdf # Publication-grade Consulting PDF Report
-│   ├── presentation_guide.md         # Faculty Presentation Script & 16 Viva Q&As
-│   ├── strategy_impact_metrics.json  # Hub upgrade ROI simulation metrics
-│   └── figures/                      # 5 high-res PNG charts for presentations
+│   ├── operations_strategy_memo.md     # Executive Strategy Memo for VP of Logistics
+│   ├── Delhivery_Logistics_Optimization_Full_Project_Report.pdf # Master PDF Report
+│   ├── strategy_impact_metrics.json    # Hub upgrade ROI simulation metrics
+│   └── figures/                        # 5 high-res PNG charts for presentations
 ├── tests/
-│   └── test_pipeline.py              # Automated 7-module test suite (100% pass)
-├── presentation_slides.pptx          # 10-slide ready-to-present PowerPoint deck
-├── run_dashboard.bat                 # One-click desktop launcher for web dashboard
-├── run_api.bat                       # One-click desktop launcher for REST API
-├── run_pipeline.bat                  # One-click pipeline runner
+│   └── test_pipeline.py                # Automated 7-module test suite (100% pass)
+├── presentation_slides.pptx            # 16-slide Technical Defense PowerPoint deck
+├── frontend_presentation_slides.pptx   # 12-slide Watchtower Frontend PowerPoint deck
+├── run_dashboard.bat                   # One-click desktop launcher for web dashboard
+├── run_api.bat                         # One-click desktop launcher for REST API
+├── run_pipeline.bat                    # One-click pipeline runner
 └── requirements.txt
 ```
 
@@ -79,7 +79,7 @@ ml_proj/
 ### 1. Run Complete Pipeline End-to-End
 To regenerate datasets, build the network graph, train all ML models, and generate the strategy memo:
 ```powershell
-python -m src.run_pipeline
+python -m src.stage_12_run_pipeline
 ```
 
 ### 2. Launch Interactive Streamlit Dashboard
