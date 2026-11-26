@@ -38,6 +38,7 @@ def load_artifacts():
         DATA['hubs_df'] = pd.read_csv("data/hubs_geocoded.csv" if os.path.exists("data/hubs_geocoded.csv") else "data/hub_centrality_metrics.csv")
         DATA['corridors_df'] = pd.read_csv("data/corridor_metrics.csv")
         DATA['rules_df'] = pd.read_csv("data/ftl_vs_carting_rules.csv")
+        DATA['sage_df'] = pd.read_csv("data/graphsage_node_features.csv")
         print("API runtime artifacts initialized successfully.")
     except Exception as e:
         print(f"Warning loading artifacts: {e}")
@@ -138,8 +139,22 @@ def predict_eta():
     emb_dim = DATA['node2vec_data']['dimensions']
 
     corr_key = (src_id, dst_id, rtype, tod)
-    corr_weight = strat_dict.get(corr_key, global_median)
+    nx_graph = graph_data['graph']
+    if corr_key in strat_dict:
+        corr_weight = strat_dict[corr_key]
+    elif nx_graph.has_edge(src_id, dst_id):
+        corr_weight = nx_graph[src_id][dst_id].get('median_delay_ratio', global_median)
+    else:
+        corr_weight = global_median
     corr_chronic = 1 if corr_weight > 1.20 else 0
+
+    sage_df = DATA.get('sage_df', pd.DataFrame())
+    src_s = sage_df[sage_df['hub_id'] == src_id] if not sage_df.empty else pd.DataFrame()
+    dst_s = sage_df[sage_df['hub_id'] == dst_id] if not sage_df.empty else pd.DataFrame()
+    src_sage_delay = float(src_s['sage_nbr_mean_delay'].values[0]) if not src_s.empty else 1.88
+    dst_sage_delay = float(dst_s['sage_nbr_mean_delay'].values[0]) if not dst_s.empty else 1.88
+    src_sage_choke = float(src_s['sage_nbr_mean_chokepoint'].values[0]) if not src_s.empty else 15.0
+    dst_sage_choke = float(dst_s['sage_nbr_mean_chokepoint'].values[0]) if not dst_s.empty else 15.0
 
     hubs_df = DATA['hubs_df']
     src_m = hubs_df[hubs_df['hub_id'] == src_id]
@@ -169,7 +184,7 @@ def predict_eta():
         src_choke, dst_choke,
         float(src_m['hub_sla_breach_rate'].values[0]) if not src_m.empty else 0.88,
         float(dst_m['hub_sla_breach_rate'].values[0]) if not dst_m.empty else 0.88,
-        1.88, 1.88, 15.0, 15.0,
+        src_sage_delay, dst_sage_delay, src_sage_choke, dst_sage_choke,
         cosine_sim, euclid_dist
     ] + src_emb.tolist() + dst_emb.tolist()
 

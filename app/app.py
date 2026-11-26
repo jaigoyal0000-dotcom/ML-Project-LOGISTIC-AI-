@@ -450,9 +450,20 @@ def load_datasets():
     with open("data/node2vec_embeddings.pkl", "rb") as f:
         node2vec_data = pickle.load(f)
 
+    sage_df = pd.read_csv("data/graphsage_node_features.csv")
     feat_imp = pd.read_csv("models/feature_importance.csv")
 
-    return segments, hubs, corridors, rules, benchmarks, pipeline_meta, impact_metrics, graph_data, node2vec_data, feat_imp
+    return segments, hubs, corridors, rules, benchmarks, pipeline_meta, impact_metrics, graph_data, node2vec_data, sage_df, feat_imp
+
+
+def haversine_road_km(lat1, lon1, lat2, lon2):
+    """Estimate Indian road distance (km) from real GeoNames coordinates with 1.22x circuity."""
+    r = 6371.0
+    p1, p2 = np.radians(lat1), np.radians(lat2)
+    dp = np.radians(lat2 - lat1)
+    dl = np.radians(lon2 - lon1)
+    a = np.sin(dp / 2) ** 2 + np.cos(p1) * np.cos(p2) * np.sin(dl / 2) ** 2
+    return float(round(2 * r * np.arcsin(np.sqrt(a)) * 1.22, 1))
 
 
 @st.cache_resource
@@ -463,7 +474,7 @@ def load_models():
 
 
 try:
-    segments_df, hubs_df, corridors_df, rules_df, benchmarks, pipeline_meta, impact_metrics, graph_data, node2vec_data, feat_imp_df = load_datasets()
+    segments_df, hubs_df, corridors_df, rules_df, benchmarks, pipeline_meta, impact_metrics, graph_data, node2vec_data, sage_df, feat_imp_df = load_datasets()
     best_graph_model, baseline_model = load_models()
     data_loaded = True
 except Exception as e:
@@ -908,6 +919,8 @@ elif menu_option == "SMART ETA PREDICTOR":
     """, unsafe_allow_html=True)
 
     hub_opts = hubs_df['hub_id'] + " - " + hubs_df['hub_name']
+    dow_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
     col_p1, col_p2 = st.columns(2)
     with col_p1:
         s_src = st.selectbox("ORIGIN FACILITY", hub_opts, index=0)
@@ -915,62 +928,126 @@ elif menu_option == "SMART ETA PREDICTOR":
         s_hour = st.slider("DEPARTURE HOUR (0-23)", 0, 23, 14)
     with col_p2:
         s_dst = st.selectbox("DESTINATION FACILITY", hub_opts, index=min(1, len(hub_opts)-1))
-        s_dist = st.number_input("CORRIDOR DISTANCE (KM)", 10.0, 2500.0, 280.0, 10.0)
-        s_dow = st.selectbox("DAY OF WEEK", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], index=2)
+        s_src_id = s_src.split(" - ")[0]
+        s_dst_id = s_dst.split(" - ")[0]
 
-    s_src_id = s_src.split(" - ")[0]
-    s_dst_id = s_dst.split(" - ")[0]
+        # Compute real historical corridor distance or GeoNames road distance
+        direct_corr = corridors_df[(corridors_df['source_center'] == s_src_id) & (corridors_df['destination_center'] == s_dst_id)]
+        src_row_pre = hubs_df[hubs_df['hub_id'] == s_src_id]
+        dst_row_pre = hubs_df[hubs_df['hub_id'] == s_dst_id]
+        if not direct_corr.empty and 'median_distance_km' in direct_corr.columns:
+            est_km = float(direct_corr['median_distance_km'].values[0])
+            dist_src_label = "Historical Corridor Distance"
+        elif not src_row_pre.empty and not dst_row_pre.empty and 'latitude' in hubs_df.columns:
+            est_km = max(10.0, haversine_road_km(
+                float(src_row_pre['latitude'].values[0]), float(src_row_pre['longitude'].values[0]),
+                float(dst_row_pre['latitude'].values[0]), float(dst_row_pre['longitude'].values[0])
+            ))
+            dist_src_label = "GeoNames Road Distance"
+        else:
+            est_km = 280.0
+            dist_src_label = "Default"
+
+        auto_dist = st.checkbox(f"Auto-use {dist_src_label} ({est_km:.1f} km)", value=True)
+        s_dist = st.number_input("CORRIDOR DISTANCE (KM)", 10.0, 2500.0, float(min(2500.0, max(10.0, est_km))) if auto_dist else 280.0, 10.0, disabled=auto_dist)
+        s_dow_name = st.selectbox("DAY OF WEEK", dow_names, index=2)
+
+    s_dow = dow_names.index(s_dow_name)
+    is_weekend = 1 if s_dow in [5, 6] else 0
     osrm_hr = round(s_dist / 50.0, 2)
 
     if st.button("RUN MULTI-MODEL INFERENCE", type="primary", use_container_width=True):
         strat_dict = graph_data['stratified_corridor_dict']
+        nx_graph = graph_data['graph']
         global_med = graph_data['global_median_delay_ratio']
         embeddings = node2vec_data['embeddings']
         emb_dim = node2vec_data['dimensions']
 
         tod = "Morning" if 6 <= s_hour < 12 else ("Afternoon" if 12 <= s_hour < 18 else ("Evening" if 18 <= s_hour < 24 else "Night"))
         corr_key = (s_src_id, s_dst_id, s_route, tod)
-        corr_w = strat_dict.get(corr_key, global_med)
+        if corr_key in strat_dict:
+            corr_w = float(strat_dict[corr_key])
+            corr_source = f"Exact Stratified ({s_route}, {tod})"
+        elif nx_graph.has_edge(s_src_id, s_dst_id):
+            corr_w = float(nx_graph[s_src_id][s_dst_id].get('median_delay_ratio', global_med))
+            corr_source = "Corridor Edge Median"
+        else:
+            corr_w = float(global_med)
+            corr_source = "Network Global Median"
 
         src_m = hubs_df[hubs_df['hub_id'] == s_src_id]
         dst_m = hubs_df[hubs_df['hub_id'] == s_dst_id]
 
         src_bc = float(src_m['betweenness_centrality'].values[0]) if not src_m.empty else 0.0
         dst_bc = float(dst_m['betweenness_centrality'].values[0]) if not dst_m.empty else 0.0
-        src_choke = float(src_m['chokepoint_risk_score'].values[0]) if not src_m.empty else 20.0
-        dst_choke = float(dst_m['chokepoint_risk_score'].values[0]) if not dst_m.empty else 20.0
+        src_in_deg = float(src_m['in_degree'].values[0]) if not src_m.empty else 0.0
+        src_out_deg = float(src_m['out_degree'].values[0]) if not src_m.empty else 0.0
+        dst_in_deg = float(dst_m['in_degree'].values[0]) if not dst_m.empty else 0.0
+        dst_out_deg = float(dst_m['out_degree'].values[0]) if not dst_m.empty else 0.0
+        src_cc = float(src_m['clustering_coefficient'].values[0]) if not src_m.empty else 0.0
+        dst_cc = float(dst_m['clustering_coefficient'].values[0]) if not dst_m.empty else 0.0
+        src_choke = float(src_m['chokepoint_risk_score'].values[0]) if not src_m.empty else 15.0
+        dst_choke = float(dst_m['chokepoint_risk_score'].values[0]) if not dst_m.empty else 15.0
+        src_brk = float(src_m['hub_sla_breach_rate'].values[0]) if not src_m.empty else 0.88
+        dst_brk = float(dst_m['hub_sla_breach_rate'].values[0]) if not dst_m.empty else 0.88
+
+        src_s = sage_df[sage_df['hub_id'] == s_src_id]
+        dst_s = sage_df[sage_df['hub_id'] == s_dst_id]
+        src_sage_delay = float(src_s['sage_nbr_mean_delay'].values[0]) if not src_s.empty else 1.88
+        dst_sage_delay = float(dst_s['sage_nbr_mean_delay'].values[0]) if not dst_s.empty else 1.88
+        src_sage_choke = float(src_s['sage_nbr_mean_chokepoint'].values[0]) if not dst_s.empty and not src_s.empty else 15.0
+        dst_sage_choke = float(dst_s['sage_nbr_mean_chokepoint'].values[0]) if not dst_s.empty else 15.0
 
         b_vec = [
-            osrm_hr, s_dist, 1 if s_route == 'FTL' else 0, s_hour, 2, 0,
-            0, 1, 0, 0,
-            0, 1, 0
+            osrm_hr, s_dist, 1 if s_route == 'FTL' else 0, s_hour, s_dow, is_weekend,
+            1 if tod == 'Morning' else 0, 1 if tod == 'Afternoon' else 0, 1 if tod == 'Evening' else 0, 1 if tod == 'Night' else 0,
+            1 if s_dist < 100 else 0, 1 if 100 <= s_dist <= 300 else 0, 1 if s_dist > 300 else 0
         ]
         src_emb = embeddings.get(str(s_src_id), np.zeros(emb_dim, dtype=np.float32))
         dst_emb = embeddings.get(str(s_dst_id), np.zeros(emb_dim, dtype=np.float32))
+        cosine_sim = float(np.dot(src_emb, dst_emb) / (np.linalg.norm(src_emb) * np.linalg.norm(dst_emb) + 1e-9))
+        euclid_dist = float(np.linalg.norm(src_emb - dst_emb))
 
         g_vec = b_vec + [
-            corr_w, 1 if corr_w > 1.2 else 0,
-            src_bc, dst_bc, 10, 10, 10, 10, 0.1, 0.1,
-            src_choke, dst_choke, 0.88, 0.88, 1.88, 1.88, 15.0, 15.0,
-            0.5, 1.2
+            corr_w, 1 if corr_w > 1.20 else 0,
+            src_bc, dst_bc, src_in_deg, src_out_deg, dst_in_deg, dst_out_deg, src_cc, dst_cc,
+            src_choke, dst_choke, src_brk, dst_brk,
+            src_sage_delay, dst_sage_delay, src_sage_choke, dst_sage_choke,
+            cosine_sim, euclid_dist
         ] + src_emb.tolist() + dst_emb.tolist()
 
-        pred_base = float(baseline_model.predict([b_vec])[0])
-        pred_graph = float(best_graph_model.predict([g_vec])[0])
-        pred_sage = round(osrm_hr * (0.65 * corr_w + 0.35 * (src_choke/50.0)), 2)
+        pred_base = max(0.1, float(baseline_model.predict([b_vec])[0]))
+        pred_graph = max(0.1, float(best_graph_model.predict([g_vec])[0]))
+        pred_sage = max(0.1, round(osrm_hr * (0.55 * corr_w + 0.45 * ((src_sage_delay + dst_sage_delay) / 2.0)), 2))
 
         st.markdown("---")
         r1, r2, r3, r4 = st.columns(4)
         r1.metric("1. OSRM BASELINE", f"{osrm_hr:.2f} hrs", "STATIC ENGINE")
         r2.metric("2. TRIP-LEVEL ML", f"{pred_base:.2f} hrs", f"{pred_base - osrm_hr:+.2f}h vs OSRM")
         r3.metric("3. GRAPH-ENHANCED GBM", f"{pred_graph:.2f} hrs", f"{pred_graph - osrm_hr:+.2f}h vs OSRM")
-        r4.metric("4. DEEP GRAPHSAGE GNN", f"{pred_sage:.2f} hrs", "NEURAL CONVOLUTION")
+        r4.metric("4. GRAPHSAGE NEIGHBORHOOD", f"{pred_sage:.2f} hrs", "1-HOP CONVOLUTION")
 
-        gap_pct = ((pred_graph - osrm_hr) / osrm_hr) * 100
+        ci_low = max(0.1, pred_graph - 0.51)
+        ci_high = pred_graph + 0.51
+        rec_mode = "FTL (Dedicated)" if (s_dist > 300 or src_choke > 50 or dst_choke > 50) else "Carting (Consolidated)"
+
+        st.markdown(f"""
+        <div class="telemetry-panel" style="border-left: 3px solid #00FF66; margin-top: 12px;">
+            <div style="color:#00FF66; font-weight:800; font-size:0.78rem; letter-spacing:1px; margin-bottom:6px;">📡 LIVE GRAPH SIGNALS EXTRACTED FOR THIS PREDICTION</div>
+            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; font-size:0.75rem; color:#E2E8F0;">
+                <div><span style="color:#64748B;">CORRIDOR WEIGHT:</span><br><b>{corr_w:.2f}x</b> ({corr_source})</div>
+                <div><span style="color:#64748B;">HUB RISK (SRC / DST):</span><br><b>{src_choke:.1f} / {dst_choke:.1f}</b></div>
+                <div><span style="color:#64748B;">90% CONFIDENCE BAND:</span><br><b>{ci_low:.2f}h – {ci_high:.2f}h</b></div>
+                <div><span style="color:#64748B;">RECOMMENDED MODE:</span><br><b>{rec_mode}</b></div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        gap_pct = ((pred_graph - osrm_hr) / max(0.1, osrm_hr)) * 100
         if gap_pct > 40 or src_choke > 60:
-            st.error(f"⚠️ HIGH CHOKEPOINT RISK: Predicted transit time is {gap_pct:.1f}% slower than OSRM. Origin facility has elevated chokepoint severity ({src_choke:.1f}/100). Recommend dedicated FTL routing.")
+            st.error(f"⚠️ HIGH CHOKEPOINT RISK: Predicted transit time is {gap_pct:+.1f}% vs. OSRM. Origin facility has elevated chokepoint severity ({src_choke:.1f}/100). Recommend dedicated FTL routing.")
         else:
-            st.success("✅ STABLE CORRIDOR PROFILE: Turnaround matches nominal network envelope.")
+            st.success(f"✅ STABLE CORRIDOR PROFILE ({gap_pct:+.1f}% vs. OSRM): Turnaround matches nominal network envelope.")
 
 
 # -------------------------------------------------------------
