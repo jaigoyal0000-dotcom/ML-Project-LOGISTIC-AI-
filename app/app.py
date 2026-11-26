@@ -281,24 +281,145 @@ st.markdown("""
         display: none !important;
     }
 
-    /* Inputs & Selectboxes */
-    .stSelectbox>div>div, .stNumberInput>div>div, .stTextInput>div>div {
-        background-color: #11141D !important;
-        border: 1px solid #1E2330 !important;
+    /* Global Typography Contrast */
+    h1, h2, h3, h4, .stMarkdown h3 {
         color: #FFFFFF !important;
-        border-radius: 2px !important;
-        font-size: 0.8rem !important;
+        letter-spacing: 0.5px;
     }
-    .stButton>button {
-        background-color: #00F0FF !important;
+    .stCaption, [data-testid="stCaptionContainer"] p {
+        color: #94A3B8 !important;
+        font-size: 0.78rem !important;
+        letter-spacing: 0.8px !important;
+    }
+
+    /* Highlighted Input Labels */
+    [data-testid="stWidgetLabel"] label,
+    [data-testid="stWidgetLabel"] p,
+    .stSelectbox label, .stNumberInput label, .stTextInput label, .stSlider label, .stCheckbox label {
+        color: #00F0FF !important;
+        font-size: 0.76rem !important;
+        font-weight: 800 !important;
+        letter-spacing: 1.2px !important;
+        text-transform: uppercase !important;
+        margin-bottom: 4px !important;
+    }
+
+    /* Highlighted Selectboxes, Number Inputs & Text Inputs */
+    div[data-baseweb="select"] > div,
+    div[data-baseweb="input"] > div,
+    div[data-baseweb="base-input"] {
+        background-color: #131824 !important;
+        border: 1.5px solid #2E3B52 !important;
+        border-radius: 3px !important;
+        color: #FFFFFF !important;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    div[data-baseweb="select"] > div:hover,
+    div[data-baseweb="input"] > div:hover,
+    div[data-baseweb="select"] > div:focus-within,
+    div[data-baseweb="input"] > div:focus-within {
+        border-color: #00F0FF !important;
+        box-shadow: 0 0 10px rgba(0, 240, 255, 0.25) !important;
+    }
+    div[data-baseweb="select"] span,
+    div[data-baseweb="select"] div,
+    div[data-baseweb="input"] input,
+    .stNumberInput input,
+    .stTextInput input {
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+        font-weight: 600 !important;
+        font-size: 0.85rem !important;
+    }
+    div[data-baseweb="select"] svg,
+    .stNumberInput button svg {
+        fill: #00F0FF !important;
+        color: #00F0FF !important;
+    }
+    .stNumberInput button {
+        background-color: #1A2130 !important;
+        border-left: 1px solid #2E3B52 !important;
+        color: #00F0FF !important;
+    }
+
+    /* Dropdown Popover Menu */
+    ul[data-baseweb="menu"], div[data-baseweb="popover"] > div {
+        background-color: #11141D !important;
+        border: 1px solid #00F0FF55 !important;
+    }
+    li[role="option"] {
+        color: #E2E8F0 !important;
+        background-color: #11141D !important;
+    }
+    li[role="option"]:hover, li[role="option"][aria-selected="true"] {
+        background-color: #00F0FF22 !important;
+        color: #00F0FF !important;
+        font-weight: 700 !important;
+    }
+
+    /* Highlighted Sliders (Cyber Cyan instead of default red) */
+    div[data-testid="stSlider"] div[role="slider"] {
+        background-color: #00FF66 !important;
+        border: 2px solid #FFFFFF !important;
+        box-shadow: 0 0 10px rgba(0, 255, 102, 0.6) !important;
+    }
+    div[data-testid="stSlider"] div[data-testid="stThumbValue"] {
+        color: #00FF66 !important;
+        font-weight: 800 !important;
+        font-size: 0.85rem !important;
+    }
+    div[data-testid="stSlider"] div[data-baseweb="slider"] > div > div > div {
+        background: linear-gradient(90deg, #00F0FF, #00FF66) !important;
+    }
+    div[data-testid="stSlider"] [data-testid="stTickBarMin"],
+    div[data-testid="stSlider"] [data-testid="stTickBarMax"] {
+        color: #94A3B8 !important;
+        font-weight: 600 !important;
+    }
+
+    /* Highlighted Checkboxes */
+    div[data-testid="stCheckbox"] label span {
+        color: #FFFFFF !important;
+        font-weight: 700 !important;
+    }
+
+    /* Primary & Download Buttons */
+    .stButton>button, .stDownloadButton>button {
+        background: linear-gradient(90deg, #00F0FF 0%, #00D2E6 100%) !important;
         color: #000000 !important;
         border: none !important;
-        font-weight: 800 !important;
-        font-size: 0.75rem !important;
+        font-weight: 900 !important;
+        font-size: 0.78rem !important;
+        letter-spacing: 1.2px !important;
+        text-transform: uppercase !important;
+        padding: 10px 18px !important;
+        border-radius: 3px !important;
+        box-shadow: 0 0 14px rgba(0, 240, 255, 0.3) !important;
+        transition: all 0.2s ease !important;
+    }
+    .stButton>button:hover, .stDownloadButton>button:hover {
+        background: linear-gradient(90deg, #00FF66 0%, #00F0FF 100%) !important;
+        box-shadow: 0 0 18px rgba(0, 255, 102, 0.5) !important;
+        transform: translateY(-1px);
+    }
+
+    /* Streamlit Native Metrics & Dataframes */
+    div[data-testid="stMetric"] {
+        background: #11141D !important;
+        border: 1px solid #1E293B !important;
+        border-left: 3px solid #00F0FF !important;
+        padding: 12px 16px !important;
+        border-radius: 3px !important;
+    }
+    div[data-testid="stMetricLabel"] p {
+        color: #94A3B8 !important;
+        font-weight: 700 !important;
         letter-spacing: 1px !important;
         text-transform: uppercase !important;
-        padding: 8px 16px !important;
-        border-radius: 2px !important;
+    }
+    div[data-testid="stMetricValue"] {
+        color: #FFFFFF !important;
+        font-weight: 800 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -776,6 +897,16 @@ elif menu_option == "SMART ETA PREDICTOR":
     st.markdown("### ⏱️ MULTI-MODEL SMART ETA PREDICTION CONSOLE")
     st.caption("INFERENCE ACROSS 4 MODELS: OSRM BASELINE // TRIP REGRESSION // GRAPH-GBM // DEEP GRAPHSAGE GNN")
 
+    st.markdown("""
+    <div class="telemetry-panel" style="border-left: 3px solid #00F0FF; margin-bottom: 16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="color:#00F0FF; font-weight:800; font-size:0.8rem; letter-spacing:1.2px;">⚡ SHIPMENT INPUT PARAMETERS</span>
+            <span class="telemetry-live-pill">REAL-TIME GNN READY</span>
+        </div>
+        <div style="color:#94A3B8; font-size:0.72rem; margin-top:4px;">Select Origin/Destination facilities, route mode, and departure window to evaluate Graph-Enhanced ETA vs. OSRM baseline.</div>
+    </div>
+    """, unsafe_allow_html=True)
+
     hub_opts = hubs_df['hub_id'] + " - " + hubs_df['hub_name']
     col_p1, col_p2 = st.columns(2)
     with col_p1:
@@ -797,7 +928,7 @@ elif menu_option == "SMART ETA PREDICTOR":
         embeddings = node2vec_data['embeddings']
         emb_dim = node2vec_data['dimensions']
 
-        tod = "Afternoon" if 12 <= s_hour < 18 else ("Morning" if 6 <= s_hour < 12 else "Night")
+        tod = "Morning" if 6 <= s_hour < 12 else ("Afternoon" if 12 <= s_hour < 18 else ("Evening" if 18 <= s_hour < 24 else "Night"))
         corr_key = (s_src_id, s_dst_id, s_route, tod)
         corr_w = strat_dict.get(corr_key, global_med)
 
